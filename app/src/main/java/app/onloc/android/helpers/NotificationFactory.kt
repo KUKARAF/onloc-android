@@ -26,6 +26,8 @@ import androidx.core.app.NotificationCompat
 import app.onloc.android.R
 import app.onloc.android.receivers.NotificationDismissedReceiver
 
+const val RING_NOTIFICATION_ID = 3001
+
 const val LOCK_SCREEN_CHANNEL_ID = "lock_screen_channel"
 const val LOCK_SCREEN_NOTIFICATION_ID = 9999
 
@@ -135,6 +137,29 @@ object NotificationFactory {
     //endregion
 
     //region Ringer service
+
+    /**
+     * Creates a high-priority full-screen notification that launches RingerActivity.
+     * Required on Android 10+ where startActivity() from a background service is blocked.
+     */
+    fun createRingNotification(context: Context, pendingIntent: PendingIntent): Notification {
+        val channelId = RINGER_SERVICE_CHANNEL_ID
+        val channelName = context.getString(R.string.service_ringer_channel_name)
+        val channel = NotificationChannel(channelId, channelName, NotificationManager.IMPORTANCE_HIGH)
+
+        val notificationManager = context.getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+        notificationManager.createNotificationChannel(channel)
+
+        return NotificationCompat.Builder(context, channelId)
+            .setSmallIcon(android.R.drawable.ic_lock_idle_alarm)
+            .setContentTitle(context.getString(R.string.service_ringer_start_notification_title))
+            .setContentText(context.getString(R.string.service_ringer_start_notification_description))
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setCategory(NotificationCompat.CATEGORY_ALARM)
+            .setFullScreenIntent(pendingIntent, true)
+            .setAutoCancel(true)
+            .build()
+    }
 
     /**
      * Creates the notification displayed when the ringer service starts.

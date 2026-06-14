@@ -17,6 +17,7 @@ package app.onloc.android.services
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.app.PendingIntent
 import android.app.Service
 import android.app.admin.DevicePolicyManager
 import android.content.Intent
@@ -30,7 +31,9 @@ import app.onloc.android.UserPreferences
 import app.onloc.android.helpers.LOCK_SCREEN_CHANNEL_ID
 import app.onloc.android.helpers.LOCK_SCREEN_NOTIFICATION_ID
 import app.onloc.android.helpers.NotificationFactory.createLockScreenNotification
+import app.onloc.android.helpers.NotificationFactory.createRingNotification
 import app.onloc.android.helpers.NotificationFactory.createStartWebSocketServiceNotification
+import app.onloc.android.helpers.RING_NOTIFICATION_ID
 import app.onloc.android.helpers.START_WEBSOCKET_SERVICE_NOTIFICATION_ID
 import app.onloc.android.permissions.AdminPermission
 import app.onloc.android.permissions.DoNotDisturbPermission
@@ -148,14 +151,18 @@ class WebSocketService : Service() {
             SocketManager.on(ringCommandEvent) { _ ->
                 if (!RingerState.isRinging) {
                     RingerState.isRinging = true
-                    val ringerIntent = Intent(
-                        this,
-                        RingerActivity::class.java,
-                    )
+                    val ringerIntent = Intent(this, RingerActivity::class.java)
                         .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                         .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
                         .addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
-                    startActivity(ringerIntent)
+                    val pendingIntent = PendingIntent.getActivity(
+                        this,
+                        0,
+                        ringerIntent,
+                        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+                    )
+                    val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+                    notificationManager.notify(RING_NOTIFICATION_ID, createRingNotification(this, pendingIntent))
                 }
             }
         }
