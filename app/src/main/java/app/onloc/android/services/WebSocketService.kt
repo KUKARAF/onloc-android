@@ -38,7 +38,6 @@ import app.onloc.android.helpers.START_WEBSOCKET_SERVICE_NOTIFICATION_ID
 import app.onloc.android.permissions.AdminPermission
 import app.onloc.android.permissions.PostNotificationPermission
 import app.onloc.android.services.ServiceStatus.isWebSocketServiceRunning
-import app.onloc.android.singletons.RingerState
 import app.onloc.android.ui.ringer.RingerActivity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -118,7 +117,7 @@ class WebSocketService : Service() {
         val userPrefs = UserPreferences(this)
         val token = userPrefs.getUserCredentials().accessToken
 
-        if (ip == null || token == null || deviceId == -1) return
+        if (ip == null || token == null || deviceId == null) return
 
         // Disconnect old listeners
         SocketManager.off(ringCommandEvent)
@@ -139,24 +138,19 @@ class WebSocketService : Service() {
         val postNotificationPermission = PostNotificationPermission()
         val adminPermission = AdminPermission()
 
-        if (postNotificationPermission.isGranted(this)) {
-            SocketManager.on(ringCommandEvent) { _ ->
-                if (!RingerState.isRinging) {
-                    RingerState.isRinging = true
-                    val ringerIntent = Intent(this, RingerActivity::class.java)
-                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                        .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
-                        .addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
-                    val pendingIntent = PendingIntent.getActivity(
-                        this,
-                        0,
-                        ringerIntent,
-                        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-                    )
-                    val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
-                    notificationManager.notify(RING_NOTIFICATION_ID, createRingNotification(this, pendingIntent))
-                }
-            }
+        SocketManager.on(ringCommandEvent) { _ ->
+            val ringerIntent = Intent(this, RingerActivity::class.java)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                .addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
+            val pendingIntent = PendingIntent.getActivity(
+                this,
+                0,
+                ringerIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+            )
+            val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+            notificationManager.notify(RING_NOTIFICATION_ID, createRingNotification(this, pendingIntent))
         }
 
         if (
