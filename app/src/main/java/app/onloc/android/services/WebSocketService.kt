@@ -36,8 +36,6 @@ import app.onloc.android.helpers.NotificationFactory.createStartWebSocketService
 import app.onloc.android.helpers.RING_NOTIFICATION_ID
 import app.onloc.android.helpers.START_WEBSOCKET_SERVICE_NOTIFICATION_ID
 import app.onloc.android.permissions.AdminPermission
-import app.onloc.android.permissions.DoNotDisturbPermission
-import app.onloc.android.permissions.OverlayPermission
 import app.onloc.android.permissions.PostNotificationPermission
 import app.onloc.android.services.ServiceStatus.isWebSocketServiceRunning
 import app.onloc.android.singletons.RingerState
@@ -139,15 +137,9 @@ class WebSocketService : Service() {
         )
 
         val postNotificationPermission = PostNotificationPermission()
-        val doNotDisturbPermission = DoNotDisturbPermission()
-        val overlayPermission = OverlayPermission()
         val adminPermission = AdminPermission()
 
-        if (
-            postNotificationPermission.isGranted(this) &&
-            doNotDisturbPermission.isGranted(this) &&
-            overlayPermission.isGranted(this)
-        ) {
+        if (postNotificationPermission.isGranted(this)) {
             SocketManager.on(ringCommandEvent) { _ ->
                 if (!RingerState.isRinging) {
                     RingerState.isRinging = true

@@ -15,6 +15,7 @@
 
 package app.onloc.android.ui.ringer
 
+import android.media.AudioAttributes
 import android.media.AudioManager
 import android.media.Ringtone
 import android.media.RingtoneManager
@@ -45,7 +46,6 @@ const val DURATION = 60000L
 
 class RingerActivity : ComponentActivity() {
     private var ringtone: Ringtone? = null
-    private var oldRingerMode: Int? = null
     private var oldAlarmVolume: Int? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -56,6 +56,10 @@ class RingerActivity : ComponentActivity() {
 
         val ringtoneUri = Settings.System.DEFAULT_ALARM_ALERT_URI
         ringtone = RingtoneManager.getRingtone(applicationContext, ringtoneUri)
+        ringtone?.audioAttributes = AudioAttributes.Builder()
+            .setUsage(AudioAttributes.USAGE_ALARM)
+            .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+            .build()
 
         setContent {
             LaunchedEffect(Unit) {
@@ -106,18 +110,14 @@ class RingerActivity : ComponentActivity() {
     private fun raiseVolume() {
         val audioManager = getSystemService(AUDIO_SERVICE) as AudioManager
 
-        oldRingerMode = audioManager.ringerMode
-        oldAlarmVolume = audioManager.getStreamVolume(AudioManager.STREAM_RING)
-
-        audioManager.ringerMode = AudioManager.RINGER_MODE_NORMAL
-        val maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_RING)
-        audioManager.setStreamVolume(AudioManager.STREAM_RING, maxVolume, 0)
+        oldAlarmVolume = audioManager.getStreamVolume(AudioManager.STREAM_ALARM)
+        val maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_ALARM)
+        audioManager.setStreamVolume(AudioManager.STREAM_ALARM, maxVolume, 0)
     }
 
     private fun resetVolume() {
         val audioManager = getSystemService(AUDIO_SERVICE) as AudioManager
 
-        oldRingerMode?.let { audioManager.ringerMode = it }
-        oldAlarmVolume?.let { audioManager.setStreamVolume(AudioManager.STREAM_RING, it, 0) }
+        oldAlarmVolume?.let { audioManager.setStreamVolume(AudioManager.STREAM_ALARM, it, 0) }
     }
 }
